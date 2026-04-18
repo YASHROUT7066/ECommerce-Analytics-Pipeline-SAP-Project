@@ -65,10 +65,3 @@ sap-data-analytics-project/
 └── logs/
     └── pipeline.log
 ```
-
-## Future Improvements
-- Add database loading step (PostgreSQL/MySQL) after transformation
-- Add unit tests for ETL scripts
-- Add more advanced KPI metrics (AOV, repeat rate, category trends)
-- Add authentication and role-based access in Flask app
-- Dockerize the project for easier deployment
