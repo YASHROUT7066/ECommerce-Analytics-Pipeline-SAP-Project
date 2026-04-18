@@ -1,0 +1,415 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>E-Commerce Analytics Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg: #f3f6fb;
+            --panel: #ffffff;
+            --text: #1e2433;
+            --muted: #6a738b;
+            --primary: #1c4f94;
+            --primary-soft: #e8f1ff;
+            --ok: #179653;
+            --warn: #d69400;
+            --danger: #d84b4b;
+            --border: #dbe3ef;
+        }
+        * { box-sizing: border-box; }
+        body {
+            font-family: "Segoe UI", Arial, sans-serif;
+            background: var(--bg);
+            margin: 0;
+            color: var(--text);
+        }
+        .container {
+            max-width: 1200px;
+            margin: 24px auto;
+            padding: 0 16px 24px;
+        }
+        .topbar {
+            background: var(--primary);
+            color: #fff;
+            border-radius: 14px;
+            padding: 18px 20px;
+            display: flex;
+            justify-content: space-between;
+            gap: 16px;
+            align-items: center;
+            flex-wrap: wrap;
+            box-shadow: 0 8px 18px rgba(28, 79, 148, 0.25);
+        }
+        .topbar h1 {
+            margin: 0;
+            font-size: 1.45rem;
+            font-weight: 600;
+        }
+        .topbar p {
+            margin: 6px 0 0;
+            color: #eaf2ff;
+            font-size: 0.92rem;
+        }
+        .action-group {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .btn {
+            background: #fff;
+            color: var(--primary);
+            border: none;
+            border-radius: 8px;
+            padding: 10px 14px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .btn:hover { filter: brightness(0.96); }
+        .panel {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 14px;
+            box-shadow: 0 2px 8px rgba(25, 44, 76, 0.06);
+        }
+        .kpi-grid {
+            margin-top: 16px;
+            display: grid;
+            grid-template-columns: repeat(4, minmax(170px, 1fr));
+            gap: 12px;
+        }
+        .kpi-label {
+            margin: 0;
+            color: var(--muted);
+            font-size: 0.85rem;
+        }
+        .kpi-value {
+            margin: 8px 0 0;
+            font-size: 1.45rem;
+            font-weight: 700;
+        }
+        .kpi-ok .kpi-value { color: var(--ok); }
+        .kpi-warn .kpi-value { color: var(--warn); }
+        .kpi-danger .kpi-value { color: var(--danger); }
+        .filter-row {
+            margin-top: 14px;
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 12px;
+        }
+        .field label {
+            display: block;
+            font-size: 0.82rem;
+            color: var(--muted);
+            margin-bottom: 6px;
+        }
+        select, input {
+            width: 100%;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 9px;
+            background: #fff;
+            color: var(--text);
+        }
+        .charts-grid {
+            margin-top: 16px;
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 12px;
+        }
+        .subgrid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-top: 12px;
+        }
+        h2 {
+            margin: 0 0 10px;
+            font-size: 1rem;
+        }
+        .table-wrap {
+            overflow-x: auto;
+            margin-top: 12px;
+        }
+        table { border-collapse: collapse; width: 100%; font-size: 0.9rem; }
+        th, td { border: 1px solid #dce4ef; padding: 8px; text-align: left; }
+        th { background: #eff5ff; }
+        .muted { color: var(--muted); margin: 0; }
+        .hidden { display: none; }
+        @media (max-width: 980px) {
+            .kpi-grid { grid-template-columns: repeat(2, minmax(160px, 1fr)); }
+            .charts-grid { grid-template-columns: 1fr; }
+            .subgrid { grid-template-columns: 1fr; }
+            .filter-row { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="topbar">
+            <div>
+                <h1>E-Commerce Data Analytics Dashboard</h1>
+                <p>{{ message if message else "Run pipeline first" }}</p>
+            </div>
+            <div class="action-group">
+                <form method="POST" action="/run">
+                    <button class="btn" type="submit">Run Pipeline</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="kpi-grid">
+            <div class="panel">
+                <p class="kpi-label">Total Revenue</p>
+                <p class="kpi-value" id="totalRevenue">0</p>
+            </div>
+            <div class="panel kpi-ok">
+                <p class="kpi-label">Total Orders</p>
+                <p class="kpi-value" id="totalOrders">0</p>
+            </div>
+            <div class="panel kpi-warn">
+                <p class="kpi-label">Average Order Value</p>
+                <p class="kpi-value" id="averageOrder">0</p>
+            </div>
+            <div class="panel kpi-danger">
+                <p class="kpi-label">Top Product</p>
+                <p class="kpi-value" id="topProduct">-</p>
+            </div>
+        </div>
+
+        <div class="panel filter-row">
+            <div class="field">
+                <label for="productFilter">Filter by Product</label>
+                <select id="productFilter">
+                    <option value="">All Products</option>
+                </select>
+            </div>
+            <div class="field">
+                <label for="searchFilter">Search Customer</label>
+                <input id="searchFilter" type="text" placeholder="Type customer name">
+            </div>
+            <div class="field">
+                <label for="minAmount">Min Amount</label>
+                <input id="minAmount" type="number" step="0.01" min="0" placeholder="0.00">
+            </div>
+        </div>
+
+        <div class="charts-grid">
+            <div class="panel">
+                <h2>Revenue by Product</h2>
+                <canvas id="salesChart" height="120"></canvas>
+            </div>
+            <div class="panel">
+                <h2>Revenue Share</h2>
+                <canvas id="shareChart" height="120"></canvas>
+            </div>
+        </div>
+
+        <div class="subgrid">
+            <div class="panel">
+                <h2>Daily Revenue Trend</h2>
+                <canvas id="trendChart" height="120"></canvas>
+            </div>
+            <div class="panel">
+                <h2>Product Breakdown</h2>
+                <div id="productBreakdown"></div>
+            </div>
+        </div>
+
+        <div class="panel table-wrap">
+            <h2>Cleaned Data</h2>
+            {% if tables %}
+                {{ tables | safe }}
+            {% else %}
+                <p class="muted">No cleaned data available. Run the pipeline first.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <script>
+        const records = {{ records|default([], true)|tojson }};
+        const tableBody = document.querySelector('.data-table tbody');
+        const productFilter = document.getElementById('productFilter');
+        const searchFilter = document.getElementById('searchFilter');
+        const minAmount = document.getElementById('minAmount');
+        const productBreakdown = document.getElementById('productBreakdown');
+
+        const salesCtx = document.getElementById('salesChart').getContext('2d');
+        const shareCtx = document.getElementById('shareChart').getContext('2d');
+        const trendCtx = document.getElementById('trendChart').getContext('2d');
+
+        const salesChart = new Chart(salesCtx, {
+            type: 'bar',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: 'Revenue',
+                    data: [],
+                    backgroundColor: 'rgba(28, 79, 148, 0.45)',
+                    borderColor: 'rgba(28, 79, 148, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: { beginAtZero: true }
+                }
+            }
+        });
+
+        const shareChart = new Chart(shareCtx, {
+            type: 'doughnut',
+            data: {
+                labels: [],
+                datasets: [{
+                    data: [],
+                    backgroundColor: ['#1c4f94', '#4e79bd', '#86a8d8', '#9fbbdf', '#b8cfec', '#d6e4f7']
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { position: 'bottom' } }
+            }
+        });
+
+        const trendChart = new Chart(trendCtx, {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: 'Daily Revenue',
+                    data: [],
+                    borderColor: '#1c4f94',
+                    backgroundColor: 'rgba(28, 79, 148, 0.15)',
+                    fill: true,
+                    tension: 0.35
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: { y: { beginAtZero: true } }
+            }
+        });
+
+        function currency(amount) {
+            return new Intl.NumberFormat('en-IN', {
+                style: 'currency',
+                currency: 'INR',
+                maximumFractionDigits: 2
+            }).format(amount || 0);
+        }
+
+        function computeGroupedData(filtered) {
+            const byProduct = {};
+            const byDate = {};
+            filtered.forEach((row) => {
+                const amount = Number(row.amount) || 0;
+                byProduct[row.product] = (byProduct[row.product] || 0) + amount;
+                byDate[row.date] = (byDate[row.date] || 0) + amount;
+            });
+            return { byProduct, byDate };
+        }
+
+        function applyFilters() {
+            const productValue = productFilter.value.trim().toLowerCase();
+            const searchValue = searchFilter.value.trim().toLowerCase();
+            const minValue = Number(minAmount.value || 0);
+
+            const filtered = records.filter((row) => {
+                const amount = Number(row.amount) || 0;
+                const productMatch = !productValue || row.product.toLowerCase() === productValue;
+                const customerMatch = !searchValue || row.customer.toLowerCase().includes(searchValue);
+                const amountMatch = amount >= minValue;
+                return productMatch && customerMatch && amountMatch;
+            });
+
+            updateKpis(filtered);
+            updateCharts(filtered);
+            updateTable(filtered);
+            updateBreakdown(filtered);
+        }
+
+        function updateKpis(filtered) {
+            const totalRevenue = filtered.reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
+            const totalOrders = filtered.length;
+            const averageOrder = totalOrders ? totalRevenue / totalOrders : 0;
+            const grouped = computeGroupedData(filtered).byProduct;
+            const topProduct = Object.keys(grouped).length
+                ? Object.entries(grouped).sort((a, b) => b[1] - a[1])[0][0]
+                : '-';
+
+            document.getElementById('totalRevenue').textContent = currency(totalRevenue);
+            document.getElementById('totalOrders').textContent = totalOrders.toString();
+            document.getElementById('averageOrder').textContent = currency(averageOrder);
+            document.getElementById('topProduct').textContent = topProduct;
+        }
+
+        function updateCharts(filtered) {
+            const grouped = computeGroupedData(filtered);
+
+            const productEntries = Object.entries(grouped.byProduct).sort((a, b) => b[1] - a[1]);
+            salesChart.data.labels = productEntries.map((item) => item[0]);
+            salesChart.data.datasets[0].data = productEntries.map((item) => Number(item[1].toFixed(2)));
+            salesChart.update();
+
+            shareChart.data.labels = productEntries.map((item) => item[0]);
+            shareChart.data.datasets[0].data = productEntries.map((item) => Number(item[1].toFixed(2)));
+            shareChart.update();
+
+            const dateEntries = Object.entries(grouped.byDate).sort((a, b) => a[0].localeCompare(b[0]));
+            trendChart.data.labels = dateEntries.map((item) => item[0]);
+            trendChart.data.datasets[0].data = dateEntries.map((item) => Number(item[1].toFixed(2)));
+            trendChart.update();
+        }
+
+        function updateTable(filtered) {
+            if (!tableBody) return;
+            tableBody.innerHTML = '';
+            filtered.forEach((row) => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${row.order_id}</td>
+                    <td>${row.customer}</td>
+                    <td>${row.product}</td>
+                    <td>${Number(row.amount).toFixed(2)}</td>
+                    <td>${row.date}</td>
+                `;
+                tableBody.appendChild(tr);
+            });
+        }
+
+        function updateBreakdown(filtered) {
+            const grouped = Object.entries(computeGroupedData(filtered).byProduct).sort((a, b) => b[1] - a[1]);
+            if (!grouped.length) {
+                productBreakdown.innerHTML = '<p class="muted">No data for this filter.</p>';
+                return;
+            }
+            productBreakdown.innerHTML = grouped
+                .map(([name, value]) => `<p><strong>${name}</strong> - ${currency(value)}</p>`)
+                .join('');
+        }
+
+        function initFilters() {
+            const products = [...new Set(records.map((row) => row.product))].sort((a, b) => a.localeCompare(b));
+            products.forEach((product) => {
+                const option = document.createElement('option');
+                option.value = product;
+                option.textContent = product;
+                productFilter.appendChild(option);
+            });
+        }
+
+        initFilters();
+        applyFilters();
+
+        productFilter.addEventListener('change', applyFilters);
+        searchFilter.addEventListener('input', applyFilters);
+        minAmount.addEventListener('input', applyFilters);
+    </script>
+</body>
+</html>

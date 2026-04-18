@@ -1,0 +1,12 @@
+order_id,customer,product,amount,date
+1001,Alice,Keyboard,49.99,2026-01-05
+1002,Bob,Mouse,19.5,2026-01-06
+1003,Charlie,Monitor,179.99,2026-01-08
+1004,Diana,USB Cable,74.596,2026-01-09
+1005,Ethan,Laptop Stand,39.0,2026-01-10
+1007,George,Keyboard,52.0,2026-01-12
+1008,Hana,Webcam,89.99,2026-01-13
+1009,Ivan,Headphones,74.596,2026-01-14
+1010,Julia,Monitor,199.5,2026-01-15
+1011,Karan,USB Cable,9.99,2026-01-16
+1012,Leah,Webcam,84.25,2026-01-17
