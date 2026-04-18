@@ -32,7 +32,7 @@ This project is inspired by real-world data warehouse pipelines similar to SAP a
    python app.py
    ```
 3. Open browser:
-   - [http://localhost:3000](http://localhost:3000)
+   - [https://ecommerce-analytics-pipeline-sap-project-8yg0.onrender.com](https://ecommerce-analytics-pipeline-sap-project-8yg0.onrender.com)
 4. Click **Run Pipeline** to generate cleaned data and view dashboard outputs.
 
 You can also run ETL directly:
