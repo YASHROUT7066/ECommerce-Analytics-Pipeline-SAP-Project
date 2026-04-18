@@ -22,24 +22,6 @@ This project is inspired by real-world data warehouse pipelines similar to SAP a
 - SQL
 - Jupyter Notebook
 
-## How to Run
-1. Install dependencies:
-   ```bash
-   pip install -r requirements.txt
-   ```
-2. Start the web app:
-   ```bash
-   python app.py
-   ```
-3. Open browser:
-   - [https://ecommerce-analytics-pipeline-sap-project-8yg0.onrender.com](https://ecommerce-analytics-pipeline-sap-project-8yg0.onrender.com)
-4. Click **Run Pipeline** to generate cleaned data and view dashboard outputs.
-
-You can also run ETL directly:
-```bash
-python main.py
-```
-
 ## Project Structure
 ```text
 sap-data-analytics-project/
